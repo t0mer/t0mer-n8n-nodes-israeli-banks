@@ -185,7 +185,7 @@ export async function createScipioClient(ctx: Context, options: ClientOptions = 
 			})) as { statusCode: number; body: unknown };
 			return { statusCode: response.statusCode, body: response.body };
 		} catch (error) {
-			throw connectionError(node, error ?? {}, options);
+			throw connectionError(node, error ?? {}, { ...options, timeoutMs });
 		}
 	};
 

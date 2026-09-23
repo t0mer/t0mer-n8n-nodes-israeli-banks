@@ -145,10 +145,14 @@ function httpHint(statusCode: number, code: string): string {
 	if (code === 'RATE_LIMITED') return 'Scipio rate-limited scrape requests. Poll less often or raise RATE_LIMIT_MAX on Scipio.';
 	if (code === 'QUEUE_FULL') return 'Scipio has too many queued jobs. Try again later.';
 	if (code === 'TWO_FACTOR_REQUIRED') {
-		return 'Add an OTP Long-Term Token to the credential, or use the Job resource for the interactive OTP flow.';
+		return 'One Zero needs an OTP Long-Term Token in the credential. For the interactive OTP flow (Job → Create), fill in Phone Number instead.';
 	}
-	if (statusCode === 504) {
-		return "Scipio's synchronous scrape timed out (SYNC_SCRAPE_TIMEOUT_SECONDS). Use Scrape Method: Async Job instead.";
+	if (statusCode === 504 && code === 'TIMEOUT') {
+		// Scipio's own envelope: only the synchronous /scrape endpoint returns this.
+		return "Scipio's synchronous scrape limit (SYNC_SCRAPE_TIMEOUT_SECONDS) was reached. Use Scrape Method: Async Job instead.";
+	}
+	if (statusCode === 502 || statusCode === 503 || statusCode === 504) {
+		return 'A proxy or gateway between n8n and Scipio failed or timed out. Check it, or use Scrape Method: Async Job, which only makes short requests.';
 	}
 	if (statusCode === 404) return 'The job or route was not found. Jobs expire from Scipio after their result TTL.';
 	return 'See the Scipio logs for more detail.';
@@ -157,9 +161,27 @@ function httpHint(statusCode: number, code: string): string {
 /** Error for a network-level failure (no HTTP response). Never embeds the request. */
 export function connectionError(
 	node: INode,
-	cause: { message?: unknown; code?: unknown },
-	options: { itemIndex?: number; secrets?: string[] } = {},
+	cause: { message?: unknown; code?: unknown; httpCode?: unknown },
+	options: { itemIndex?: number; secrets?: string[]; timeoutMs?: number } = {},
 ): NodeApiError {
+	// n8n reports an axios timeout as "connection aborted"; the code survives in httpCode.
+	const aborted = [cause.code, cause.httpCode].some((c) => c === 'ECONNABORTED' || c === 'ETIMEDOUT');
+	if (options.timeoutMs && aborted) {
+		const seconds = Math.round(options.timeoutMs / 1000);
+		const error = new NodeApiError(
+			node,
+			{ code: 'TIMEOUT', message: `No response from Scipio within ${seconds} seconds` },
+			{
+				message: `Scipio did not respond within ${seconds} seconds (Max Wait Seconds)`,
+				description:
+					'The scrape may still be running on Scipio, so retrying right away starts a second bank login. ' +
+					'Raise Max Wait Seconds above Scipio\'s SYNC_SCRAPE_TIMEOUT_SECONDS, or use Scrape Method: Async Job.',
+				itemIndex: options.itemIndex,
+			},
+		);
+		error.context.errorType = 'TIMEOUT';
+		return error;
+	}
 	const message = scrub(typeof cause.message === 'string' ? cause.message : 'Request to Scipio failed', options.secrets);
 	const code = typeof cause.code === 'string' ? cause.code : 'CONNECTION_ERROR';
 	return new NodeApiError(
