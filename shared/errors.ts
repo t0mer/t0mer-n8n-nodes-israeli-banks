@@ -144,6 +144,12 @@ function httpHint(statusCode: number, code: string): string {
 	if (statusCode === 401) return 'Check the API key in the Scipio API credential.';
 	if (code === 'RATE_LIMITED') return 'Scipio rate-limited scrape requests. Poll less often or raise RATE_LIMIT_MAX on Scipio.';
 	if (code === 'QUEUE_FULL') return 'Scipio has too many queued jobs. Try again later.';
+	if (code === 'TWO_FACTOR_REQUIRED') {
+		return 'Add an OTP Long-Term Token to the credential, or use the Job resource for the interactive OTP flow.';
+	}
+	if (statusCode === 504) {
+		return "Scipio's synchronous scrape timed out (SYNC_SCRAPE_TIMEOUT_SECONDS). Use Scrape Method: Async Job instead.";
+	}
 	if (statusCode === 404) return 'The job or route was not found. Jobs expire from Scipio after their result TTL.';
 	return 'See the Scipio logs for more detail.';
 }

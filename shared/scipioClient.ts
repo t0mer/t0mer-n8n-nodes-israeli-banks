@@ -80,6 +80,8 @@ export type Transport = (request: {
 	method: IHttpRequestMethods;
 	path: string;
 	body?: IDataObject;
+	/** Request timeout; the n8n default applies when omitted. */
+	timeoutMs?: number;
 }) => Promise<HttpResponse>;
 
 export interface ClientOptions {
@@ -100,8 +102,9 @@ export class ScipioClient {
 		path: string,
 		body?: IDataObject,
 		allow: number[] = [],
+		timeoutMs?: number,
 	): Promise<HttpResponse> {
-		const response = await this.transport({ method, path, body });
+		const response = await this.transport({ method, path, body, timeoutMs });
 		if (response.statusCode >= 400 && !allow.includes(response.statusCode)) {
 			throw httpError(this.node, response.statusCode, response.body, this.options);
 		}
@@ -118,6 +121,12 @@ export class ScipioClient {
 			options: options as unknown as IDataObject,
 		});
 		return response.body as { jobId: string; status: JobStatus };
+	}
+
+	/** Synchronous scrape: blocks until Scipio finishes (or its own timeout returns 504). */
+	async scrape(credentials: CredentialsPayload, options: ScrapeOptions, timeoutMs: number): Promise<ScrapeResult> {
+		const body = { credentials, options: options as unknown as IDataObject };
+		return (await this.call('POST', '/api/v1/scrape', body, [], timeoutMs)).body as ScrapeResult;
 	}
 
 	async getJob(jobId: string): Promise<Job> {
@@ -161,7 +170,7 @@ export async function createScipioClient(ctx: Context, options: ClientOptions = 
 	const baseURL = String(cred.baseUrl ?? '').replace(/\/+$/, '');
 	const node = ctx.getNode();
 
-	const transport: Transport = async ({ method, path, body }) => {
+	const transport: Transport = async ({ method, path, body, timeoutMs }) => {
 		try {
 			const response = (await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'scipioApi', {
 				method,
@@ -172,6 +181,7 @@ export async function createScipioClient(ctx: Context, options: ClientOptions = 
 				returnFullResponse: true,
 				ignoreHttpStatusErrors: true,
 				skipSslCertificateValidation: cred.ignoreSslIssues === true,
+				...(timeoutMs ? { timeout: timeoutMs } : {}),
 			})) as { statusCode: number; body: unknown };
 			return { statusCode: response.statusCode, body: response.body };
 		} catch (error) {

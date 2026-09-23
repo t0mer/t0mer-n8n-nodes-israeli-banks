@@ -26,6 +26,26 @@ export interface JobOutcome {
 }
 
 /**
+ * Runs a scrape with Scipio's synchronous endpoint and returns a successful
+ * result. `maxWaitSeconds` becomes the HTTP timeout. Throws for scrape failures.
+ */
+export async function runSyncScrape(
+	client: ScipioClient,
+	credentials: CredentialsPayload,
+	scrapeOptions: ScrapeOptions,
+	options: Pick<RunJobOptions, 'maxWaitSeconds'>,
+): Promise<ScrapeResult> {
+	const result = await client.scrape(credentials, scrapeOptions, Math.max(1, options.maxWaitSeconds) * 1000);
+	if (!result.success) {
+		throw scrapeError(client.node, { errorType: result.errorType, errorMessage: result.errorMessage }, {
+			itemIndex: client.options.itemIndex,
+			secrets: client.options.secrets,
+		});
+	}
+	return result;
+}
+
+/**
  * Creates a Scipio job, polls until it finishes, and returns a successful
  * result. Throws a NodeOperationError (carrying the job ID) for scrape
  * failures, OTP prompts and timeouts.
