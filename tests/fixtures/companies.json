@@ -1,0 +1,180 @@
+{
+  "companies": [
+    {
+      "companyId": "amex",
+      "name": "Amex",
+      "loginFields": [
+        "id",
+        "card6Digits",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "behatsdaa",
+      "name": "Behatsdaa",
+      "loginFields": [
+        "id",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "beinleumi",
+      "name": "Beinleumi",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "beyahadBishvilha",
+      "name": "Beyahad Bishvilha",
+      "loginFields": [
+        "id",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "discount",
+      "name": "Discount Bank",
+      "loginFields": [
+        "id",
+        "password",
+        "num"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "hapoalim",
+      "name": "Bank Hapoalim",
+      "loginFields": [
+        "userCode",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "isracard",
+      "name": "Isracard",
+      "loginFields": [
+        "id",
+        "card6Digits",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "leumi",
+      "name": "Bank Leumi",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "massad",
+      "name": "Massad",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "max",
+      "name": "Max",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "mercantile",
+      "name": "Mercantile Bank",
+      "loginFields": [
+        "id",
+        "password",
+        "num"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "mizrahi",
+      "name": "Mizrahi Bank",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "oneZero",
+      "name": "One Zero",
+      "loginFields": [
+        "email",
+        "password",
+        "otpCodeRetriever",
+        "phoneNumber",
+        "otpLongTermToken"
+      ],
+      "requiresTwoFactor": true
+    },
+    {
+      "companyId": "otsarHahayal",
+      "name": "Bank Otsar Hahayal",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "pagi",
+      "name": "Pagi",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "union",
+      "name": "Union",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "visaCal",
+      "name": "Visa Cal",
+      "loginFields": [
+        "username",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    },
+    {
+      "companyId": "yahav",
+      "name": "Bank Yahav",
+      "loginFields": [
+        "username",
+        "nationalID",
+        "password"
+      ],
+      "requiresTwoFactor": false
+    }
+  ],
+  "optInFeatures": [
+    "isracard-amex:skipAdditionalTransactionInformation",
+    "mizrahi:pendingIfNoIdentifier",
+    "mizrahi:pendingIfHasGenericDescription",
+    "mizrahi:pendingIfTodayTransaction"
+  ]
+}
