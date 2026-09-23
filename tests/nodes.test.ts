@@ -101,6 +101,32 @@ describe('IsraeliBank node', () => {
 		expect(requests[0]).toMatchObject({ method: 'POST', url: '/api/v1/scrape', timeout: 30000 });
 	});
 
+	it('reports a sync timeout clearly and without secrets (continueOnFail)', async () => {
+		const { ctx } = executeContext({ ...getManyParams, scrapeMethod: 'sync' }, () => {
+			// Shape of the error n8n throws when the axios timeout fires.
+			throw Object.assign(new Error('The connection was aborted, perhaps the server is offline'), {
+				httpCode: 'ECONNABORTED',
+			});
+		}, true);
+		const [items] = await new IsraeliBank().execute.call(ctx);
+		expect(items[0].json).toMatchObject({ errorType: 'TIMEOUT', error: expect.stringContaining('within 30 seconds') });
+		expect(JSON.stringify(items)).not.toContain(CANARY);
+	});
+
+	it('scrubs secrets from sync failures (continueOnFail)', async () => {
+		const failed = { success: false, errorType: 'INVALID_PASSWORD', errorMessage: `bad password ${CANARY}`, password: CANARY };
+		const { ctx } = executeContext({ ...getManyParams, scrapeMethod: 'sync' }, scipio(failed), true);
+		const [items] = await new IsraeliBank().execute.call(ctx);
+		expect(items[0].json).toMatchObject({ errorType: 'INVALID_PASSWORD', jobId: null });
+		expect(JSON.stringify(items)).not.toContain(CANARY);
+	});
+
+	it('leaves the request timeout to n8n in Async Job mode', async () => {
+		const { ctx, requests } = executeContext(getManyParams, scipio(sampleResult));
+		await new IsraeliBank().execute.call(ctx);
+		for (const request of requests) expect(request).not.toHaveProperty('timeout');
+	});
+
 	it('emits a sanitized error item with continueOnFail', async () => {
 		const failed = { success: false, errorType: 'INVALID_PASSWORD', errorMessage: `bad password ${CANARY}`, password: CANARY };
 		const { ctx } = executeContext(getManyParams, scipio(failed), true);

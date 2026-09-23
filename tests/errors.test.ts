@@ -94,3 +94,34 @@ describe('redaction canary', () => {
 		expect(everything(error as never)).not.toContain(CANARY);
 	});
 });
+
+describe('HTTP hints', () => {
+	it("blames Scipio's sync limit only for Scipio's own 504", () => {
+		const scipio504 = httpError(fakeNode, 504, { error: { code: 'TIMEOUT', message: 'Scrape exceeded 240s.' } });
+		expect(scipio504.description).toContain('SYNC_SCRAPE_TIMEOUT_SECONDS');
+		const proxy504 = httpError(fakeNode, 504, '<html>Gateway Timeout</html>');
+		expect(proxy504.description).toContain('proxy');
+		expect(proxy504.description).not.toContain('SYNC_SCRAPE_TIMEOUT_SECONDS');
+	});
+
+	it('points One Zero 2FA errors at the token or phone number', () => {
+		const error = httpError(fakeNode, 422, { error: { code: 'TWO_FACTOR_REQUIRED', message: 'oneZero needs 2FA' } });
+		expect(error.description).toMatch(/Long-Term Token[\s\S]*Phone Number/);
+	});
+});
+
+describe('connectionError', () => {
+	const aborted = { message: 'The connection was aborted, perhaps the server is offline', httpCode: 'ECONNABORTED' };
+
+	it('reports a client timeout as Max Wait Seconds expiring', () => {
+		const error = connectionError(fakeNode, aborted, { timeoutMs: 60000 });
+		expect(error.message).toContain('did not respond within 60 seconds');
+		expect(error.description).toContain('still be running');
+		expect(error.context.errorType).toBe('TIMEOUT');
+	});
+
+	it('keeps the generic message when no timeout was set', () => {
+		const error = connectionError(fakeNode, aborted);
+		expect(error.description).toContain('Base URL');
+	});
+});
