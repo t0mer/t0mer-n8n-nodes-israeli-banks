@@ -1,48 +1,65 @@
 {
-    "name": "n8n-nodes-israeli-banks",
-    "version": "0.1.0",
-    "description": "",
-    "license": "MIT",
-    "homepage": "",
-    "keywords": [
-        "n8n-community-node-package"
-    ],
-    "author": {
-        "name": "Tomer Klein",
-        "email": "tomer.klein@gmail.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/<...>/n8n-nodes-<...>.git"
-    },
-   "scripts": {
+	"name": "@t0mer/n8n-nodes-israeli-banks",
+	"version": "0.1.0",
+	"description": "n8n nodes for Israeli bank and credit-card transactions via a self-hosted Scipio server",
+	"license": "MIT",
+	"homepage": "https://github.com/t0mer/n8n-nodes-israeli-banks#readme",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"israel",
+		"bank",
+		"israeli-bank-scrapers",
+		"scipio",
+		"finance"
+	],
+	"author": {
+		"name": "Tomer Klein",
+		"email": "tomer.klein@gmail.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/t0mer/n8n-nodes-israeli-banks.git"
+	},
+	"scripts": {
 		"build": "n8n-node build",
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
 		"release": "n8n-node release",
-		"prepublishOnly": "n8n-node prerelease"
+		"prepublishOnly": "n8n-node prerelease",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit -p tsconfig.test.json"
 	},
-    "files": [
-        "dist"
-    ],
-    "n8n": {
-        "n8nNodesApiVersion": 1,
-        "strict": true,
-        "credentials": [],
-        "nodes": [
-            "dist/nodes/Example/Example.node.js"
-        ]
-    },
-    "devDependencies": {
-        "@n8n/node-cli": "*",
-        "eslint": "9.32.0",
-        "prettier": "3.6.2",
-        "release-it": "^19.0.4",
-        "typescript": "5.9.2"
-    },
-    "peerDependencies": {
-        "n8n-workflow": "*"
-    }
+	"files": [
+		"dist"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/ScipioApi.credentials.js",
+			"dist/credentials/IsraeliBankAccountApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/IsraeliBank/IsraeliBank.node.js",
+			"dist/nodes/IsraeliBankTrigger/IsraeliBankTrigger.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"eslint": "9.32.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2",
+		"vitest": "^5.0.1"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	}
 }
