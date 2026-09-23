@@ -1,0 +1,81 @@
+{
+  "name": "Daily new bank transactions to Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 7
+            }
+          ]
+        },
+        "event": "newCompleted",
+        "lookbackDays": 7,
+        "options": {}
+      },
+      "name": "New completed transactions",
+      "type": "@t0mer/n8n-nodes-israeli-banks.israeliBankTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b1f6d6a0-0000-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Transactions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date_local }}",
+            "Company": "={{ $json.companyId }}",
+            "Account": "={{ $json.accountNumber }}",
+            "Description": "={{ $json.description }}",
+            "Amount": "={{ $json.chargedAmount }}",
+            "Currency": "={{ $json.chargedCurrency || $json.originalCurrency }}",
+            "Memo": "={{ $json.memo }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Append to sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "id": "b1f6d6a0-0000-4000-8000-000000000004"
+    }
+  ],
+  "connections": {
+    "New completed transactions": {
+      "main": [
+        [
+          {
+            "node": "Append to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jerusalem"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "New card transaction → Telegram alert",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": { "item": [{ "mode": "everyX", "value": 4, "unit": "hours" }] },
+        "event": "newCompleted",
+        "lookbackDays": 7,
+        "options": { "maxWaitSeconds": 300 }
+      },
+      "name": "New card transaction",
+      "type": "@t0mer/n8n-nodes-israeli-banks.israeliBankTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "c2a7e7b1-0000-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "=💳 {{ $json.description }}\n{{ Math.abs($json.chargedAmount) }} {{ $json.chargedCurrency || $json.originalCurrency }} on {{ $json.date_local }}\nCard {{ $json.accountNumber }}{{ $json.installments ? `\\nInstallment ${$json.installments.number}/${$json.installments.total}` : '' }}",
+        "additionalFields": { "appendAttribution": false }
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [240, 0],
+      "id": "c2a7e7b1-0000-4000-8000-000000000002"
+    }
+  ],
+  "connections": {
+    "New card transaction": { "main": [[{ "node": "Telegram", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Jerusalem" }
+}

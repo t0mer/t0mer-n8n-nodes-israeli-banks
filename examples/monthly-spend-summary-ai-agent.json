@@ -1,0 +1,68 @@
+{
+  "name": "Monthly spend summary via AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "months", "triggerAtDayOfMonth": 1, "triggerAtHour": 8 }] }
+      },
+      "name": "1st of the month",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "d3b8f8c2-0000-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "resource": "transaction",
+        "operation": "getAll",
+        "startDateMode": "lookbackDays",
+        "lookbackDays": 35,
+        "outputMode": "transactions",
+        "statusFilter": "completed",
+        "options": {}
+      },
+      "name": "Get transactions",
+      "type": "@t0mer/n8n-nodes-israeli-banks.israeliBank",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "d3b8f8c2-0000-4000-8000-000000000002"
+    },
+    {
+      "parameters": {
+        "jsCode": "const start = $now.setZone('Asia/Jerusalem').minus({ months: 1 }).startOf('month').toFormat('yyyy-MM-dd');\nconst end = $now.setZone('Asia/Jerusalem').startOf('month').toFormat('yyyy-MM-dd');\nconst rows = $input.all().map(i => i.json).filter(t => t.date_local >= start && t.date_local < end);\nconst lines = rows.map(t => `${t.date_local}\\t${t.description}\\t${t.chargedAmount}\\t${t.category || ''}`);\nreturn [{ json: { month: start.slice(0, 7), count: rows.length, transactions: lines.join('\\n') } }];"
+      },
+      "name": "Last month only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "d3b8f8c2-0000-4000-8000-000000000003"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here are my bank/card transactions for {{ $json.month }} ({{ $json.count }} rows, tab-separated: date, description, amount in ILS where negative is a debit, category):\n\n{{ $json.transactions }}\n\nGroup the spending into sensible categories, give totals per category, the top 5 merchants, and anything unusual compared with a typical month. Keep it short.",
+        "options": {}
+      },
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [660, 0],
+      "id": "d3b8f8c2-0000-4000-8000-000000000004"
+    },
+    {
+      "parameters": { "options": {} },
+      "name": "Chat model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [660, 220],
+      "id": "d3b8f8c2-0000-4000-8000-000000000005"
+    }
+  ],
+  "connections": {
+    "1st of the month": { "main": [[{ "node": "Get transactions", "type": "main", "index": 0 }]] },
+    "Get transactions": { "main": [[{ "node": "Last month only", "type": "main", "index": 0 }]] },
+    "Last month only": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "Chat model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Jerusalem" }
+}
