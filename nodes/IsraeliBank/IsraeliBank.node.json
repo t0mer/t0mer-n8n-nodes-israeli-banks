@@ -1,0 +1,13 @@
+{
+	"node": "@t0mer/n8n-nodes-israeli-banks.israeliBank",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Finance & Accounting"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/t0mer/n8n-nodes-israeli-banks#readme"
+			}
+		]
+	}
+}
