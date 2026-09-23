@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CredentialsPayload } from '../shared/credentialsPayload';
-import { runScrapeJob } from '../shared/jobRunner';
+import { runScrapeJob, runSyncScrape } from '../shared/jobRunner';
 import { fakeClient, job, ok, sampleResult } from './helpers';
 import type { Routes } from './helpers';
 
@@ -130,5 +130,49 @@ describe('runScrapeJob', () => {
 		);
 		await promise;
 		expect(c.sleeps).toEqual([2000]);
+	});
+});
+
+describe('runSyncScrape', () => {
+	it('posts to /scrape with the max wait as HTTP timeout and returns the result', async () => {
+		const { client, calls } = fakeClient({ 'POST /api/v1/scrape': ok(sampleResult) });
+		const result = await runSyncScrape(client, credentials, scrapeOptions, { maxWaitSeconds: 120 });
+		expect(result.accounts).toHaveLength(2);
+		expect(calls).toEqual([
+			{ method: 'POST', path: '/api/v1/scrape', body: { credentials, options: scrapeOptions }, timeoutMs: 120000 },
+		]);
+	});
+
+	it('maps a bank failure (200, success=false) without a job ID', async () => {
+		const { client } = fakeClient({
+			'POST /api/v1/scrape': ok({ success: false, errorType: 'ACCOUNT_BLOCKED', errorMessage: 'blocked' }),
+		});
+		const error = await runSyncScrape(client, credentials, scrapeOptions, { maxWaitSeconds: 60 }).catch((e) => e);
+		expect(error.message).toContain('blocked');
+		expect(error.context).toMatchObject({ errorType: 'ACCOUNT_BLOCKED' });
+		expect(error.context.jobId).toBeUndefined();
+	});
+
+	it("explains Scipio's 504 timeout", async () => {
+		const { client } = fakeClient({
+			'POST /api/v1/scrape': { statusCode: 504, body: { error: { code: 'TIMEOUT', message: 'Scrape exceeded 180s.' } } },
+		});
+		await expect(runSyncScrape(client, credentials, scrapeOptions, { maxWaitSeconds: 60 })).rejects.toMatchObject({
+			httpCode: '504',
+			description: expect.stringContaining('Async Job'),
+		});
+	});
+
+	it('explains the 422 for 2FA companies without a long-term token', async () => {
+		const { client } = fakeClient({
+			'POST /api/v1/scrape': {
+				statusCode: 422,
+				body: { error: { code: 'TWO_FACTOR_REQUIRED', message: 'oneZero needs interactive 2FA.' } },
+			},
+		});
+		await expect(runSyncScrape(client, credentials, scrapeOptions, { maxWaitSeconds: 60 })).rejects.toMatchObject({
+			httpCode: '422',
+			description: expect.stringContaining('Long-Term Token'),
+		});
 	});
 });

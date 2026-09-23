@@ -16,6 +16,7 @@ export interface Call {
 	method: string;
 	path: string;
 	body?: unknown;
+	timeoutMs?: number;
 }
 
 /** Route key is `METHOD path`; a route may return a sequence of responses. */
@@ -24,8 +25,8 @@ export type Routes = Record<string, HttpResponse | HttpResponse[]>;
 export function fakeTransport(routes: Routes): { transport: Transport; calls: Call[] } {
 	const calls: Call[] = [];
 	const cursor: Record<string, number> = {};
-	const transport: Transport = async ({ method, path, body }) => {
-		calls.push({ method, path, body });
+	const transport: Transport = async ({ method, path, body, timeoutMs }) => {
+		calls.push(timeoutMs === undefined ? { method, path, body } : { method, path, body, timeoutMs });
 		const key = `${method} ${path}`;
 		const route = routes[key];
 		if (!route) return { statusCode: 404, body: { error: { code: 'NOT_FOUND', message: `No route ${key}` } } };

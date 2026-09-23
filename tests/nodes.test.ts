@@ -14,6 +14,7 @@ function scipio(result: unknown): Responder {
 		if (method === 'POST' && url === '/api/v1/jobs') return { statusCode: 202, body: { jobId: 'job-1', status: 'queued' } };
 		if (url === '/api/v1/jobs/job-1') return { statusCode: 200, body: { jobId: 'job-1', status: 'succeeded', progress: [] } };
 		if (url === '/api/v1/jobs/job-1/result') return { statusCode: 200, body: result };
+		if (method === 'POST' && url === '/api/v1/scrape') return { statusCode: 200, body: result };
 		return { statusCode: 404, body: { error: { code: 'NOT_FOUND', message: 'nope' } } };
 	};
 }
@@ -90,6 +91,14 @@ describe('IsraeliBank node', () => {
 				options: { startDate: '2026-09-01', combineInstallments: true },
 			},
 		});
+	});
+
+	it('uses the synchronous endpoint when Scrape Method is Synchronous Request', async () => {
+		const { ctx, requests } = executeContext({ ...getManyParams, scrapeMethod: 'sync' }, scipio(sampleResult));
+		const [items] = await new IsraeliBank().execute.call(ctx);
+		expect(items).toHaveLength(2);
+		expect(requests).toHaveLength(1);
+		expect(requests[0]).toMatchObject({ method: 'POST', url: '/api/v1/scrape', timeout: 30000 });
 	});
 
 	it('emits a sanitized error item with continueOnFail', async () => {
