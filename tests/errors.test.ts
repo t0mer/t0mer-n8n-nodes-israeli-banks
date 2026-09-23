@@ -120,8 +120,15 @@ describe('connectionError', () => {
 		expect(error.context.errorType).toBe('TIMEOUT');
 	});
 
-	it('keeps the generic message when no timeout was set', () => {
-		const error = connectionError(fakeNode, aborted);
-		expect(error.description).toContain('Base URL');
+	it('keeps the connection hint for network errors when no timeout was set', () => {
+		expect(connectionError(fakeNode, aborted).description).toContain('Base URL');
+		expect(connectionError(fakeNode, { message: 'getaddrinfo ENOTFOUND scipio', code: 'ENOTFOUND' }).description).toContain('Base URL');
+		expect(connectionError(fakeNode, { message: 'self-signed', code: 'DEPTH_ZERO_SELF_SIGNED_CERT' }).message).toContain('Could not reach');
+	});
+
+	it('does not blame the Base URL for non-network failures', () => {
+		const error = connectionError(fakeNode, { message: 'Unrecognized node type: CUSTOM.israeliBank' });
+		expect(error.message).toBe('Request to Scipio failed: Unrecognized node type: CUSTOM.israeliBank');
+		expect(error.description).not.toContain('Base URL');
 	});
 });

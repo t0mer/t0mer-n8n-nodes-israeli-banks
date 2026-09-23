@@ -158,7 +158,9 @@ function httpHint(statusCode: number, code: string): string {
 	return 'See the Scipio logs for more detail.';
 }
 
-/** Error for a network-level failure (no HTTP response). Never embeds the request. */
+const NETWORK_CODES = /^(ECONN\w+|ENOTFOUND|EAI_AGAIN|EHOSTUNREACH|ENETUNREACH|ETIMEDOUT|EPIPE|ESOCKETTIMEDOUT|CERT_\w+|\w*_CERT_\w*|DEPTH_ZERO_SELF_SIGNED_CERT|ERR_TLS_\w+)$/;
+
+/** Error for a failed request with no HTTP response. Never embeds the request. */
 export function connectionError(
 	node: INode,
 	cause: { message?: unknown; code?: unknown; httpCode?: unknown },
@@ -183,10 +185,23 @@ export function connectionError(
 		return error;
 	}
 	const message = scrub(typeof cause.message === 'string' ? cause.message : 'Request to Scipio failed', options.secrets);
-	const code = typeof cause.code === 'string' ? cause.code : 'CONNECTION_ERROR';
+	const codes = [cause.code, cause.httpCode].filter((c): c is string => typeof c === 'string');
+	const network = codes.find((c) => NETWORK_CODES.test(c));
+	if (!network) {
+		// Not a network failure (e.g. n8n rejected the request before sending it): show it as-is.
+		return new NodeApiError(
+			node,
+			{ code: codes[0] ?? 'REQUEST_FAILED', message },
+			{
+				message: `Request to Scipio failed: ${message}`,
+				description: 'n8n could not complete the request to Scipio. See the message above.',
+				itemIndex: options.itemIndex,
+			},
+		);
+	}
 	return new NodeApiError(
 		node,
-		{ code, message },
+		{ code: network, message },
 		{
 			message: `Could not reach Scipio: ${message}`,
 			description: 'Check the Base URL in the Scipio API credential and that the Scipio container is running.',
