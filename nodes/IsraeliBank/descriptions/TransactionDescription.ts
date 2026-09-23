@@ -40,7 +40,7 @@ export const transactionFields: INodeProperties[] = [
 				name: 'Synchronous Request',
 				value: 'sync',
 				description:
-					'One request that waits for the whole scrape (30s–3min). Can be cut off by reverse proxies; not for OTP prompts.',
+					'One request that waits for the whole scrape (30s–3min). Max Wait Seconds is the HTTP timeout; can be cut off by reverse proxies; not for OTP prompts.',
 			},
 		],
 		default: 'job',
