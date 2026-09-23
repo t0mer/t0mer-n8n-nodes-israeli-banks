@@ -73,16 +73,19 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 'lts/*'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: 'npm ci'
+
+      - name: Test
+        run: 'npm test'
 
       - name: Release
         # Publishes to npm with a provenance attestation (requires id-token: write above).
@@ -97,3 +100,31 @@ jobs:
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  scan:
+    name: Verify with n8n community package scanner
+    # Separate job with no publish rights: the scanner is third-party code and
+    # must not see the npm token or the OIDC token. It only works on a published
+    # package (it checks provenance and lints the attested source).
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+
+      - name: Scan the published package
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            if npx --yes @n8n/scan-community-package@0.37.0 "@t0mer/n8n-nodes-israeli-banks@${VERSION}"; then exit 0; fi
+            echo "Scan attempt ${attempt} failed; waiting for the registry to catch up..."
+            sleep 30
+          done
+          exit 1
