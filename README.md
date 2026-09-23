@@ -109,10 +109,14 @@ Every operation needs the Scipio API credential. Operations that scrape (Transac
 
 ### Transaction → Get Many
 
-Runs a full scrape and returns the transactions. Behind the scenes it creates a Scipio job, polls it until it finishes, and fetches the result. Scrapes usually take 30 seconds to 3 minutes. The node never uses Scipio's synchronous `/scrape` endpoint, because a scrape that long can exceed proxy and n8n request timeouts.
+Runs a full scrape and returns the transactions. Scrapes usually take 30 seconds to 3 minutes. There are two ways to run it (**Scrape Method**):
+
+- **Async Job (Recommended)**, the default: creates a Scipio job, polls it until it finishes, and fetches the result. Every request is short, so this is safe behind reverse proxies. On a timeout the job is cancelled, and OTP prompts are detected.
+- **Synchronous Request**: a single `POST /api/v1/scrape` that waits for the whole scrape. It's simpler (one request, no polling), but a reverse proxy between n8n and Scipio may cut the connection. Scipio's own limit is `SYNC_SCRAPE_TIMEOUT_SECONDS`, and exceeding it returns 504. It rejects 2FA companies (One Zero) that have no long-term token. Use it only when n8n reaches Scipio directly, for example on the same Docker network.
 
 | Parameter | Description |
 |---|---|
+| Scrape Method | **Async Job (Recommended)** or **Synchronous Request** (see above). |
 | Start Date Mode | **Lookback Days** (default) or **Fixed Date**. |
 | Lookback Days | 1–365, default 30. |
 | Start Date | Used with Fixed Date. |
@@ -128,8 +132,8 @@ Runs a full scrape and returns the transactions. Behind the scenes it creates a 
 | Future Months to Scrape | Months ahead to scrape (card companies). |
 | Include Raw Transaction | Add the bank's raw transaction object. |
 | Opt-In Features | Library opt-in behaviours, loaded from Scipio. The `mizrahi:*` ones only affect Mizrahi. |
-| Max Wait Seconds | Default 300. If the scrape hasn't finished by then, the node cancels the job and fails. |
-| Poll Interval Seconds | Default 5, minimum 2. |
+| Max Wait Seconds | Default 300. If the scrape hasn't finished by then, the node cancels the job and fails. With Synchronous Request, this is the HTTP timeout. |
+| Poll Interval Seconds | Default 5, minimum 2. Async Job only. |
 
 **Output conventions**
 
@@ -149,7 +153,9 @@ Runs a full scrape and returns the transactions. Behind the scenes it creates a 
 | `TWO_FACTOR_RETRIEVER_MISSING` | Two-factor authentication is required (see One Zero below). |
 | `GENERIC`, `GENERAL_ERROR` | The scrape failed. Check the Scipio logs. |
 
-If the job stops to wait for an OTP, Get Many cancels it (it holds a Scipio browser slot and can't be completed from there) and fails with a message explaining the manual Job flow. With **Continue On Fail** enabled, each failed item becomes `{ error, errorType, jobId }`. Error messages never include credential values.
+With Synchronous Request, Scipio can also return HTTP **504** when its sync timeout is hit (switch to Async Job), or **422 `TWO_FACTOR_REQUIRED`** for One Zero without a long-term token.
+
+In Async Job mode, if the job stops to wait for an OTP, Get Many cancels it (it holds a Scipio browser slot and can't be completed from there) and fails with a message explaining the manual Job flow. With **Continue On Fail** enabled, each failed item becomes `{ error, errorType, jobId }`. Error messages never include credential values.
 
 ### Company → Get Many
 
