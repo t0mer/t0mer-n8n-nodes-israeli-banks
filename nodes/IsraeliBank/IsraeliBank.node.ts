@@ -9,7 +9,7 @@ import type {
 } from 'n8n-workflow';
 
 import { jobError } from '../../shared/errors';
-import { runScrapeJob } from '../../shared/jobRunner';
+import { runScrapeJob, runSyncScrape } from '../../shared/jobRunner';
 import { mapResult } from '../../shared/mapResult';
 import type { OutputMode, StatusFilter } from '../../shared/mapResult';
 import { getBankCredential, getOptInFeatures, israeliBankAccountTest } from '../../shared/nodeMethods';
@@ -49,10 +49,15 @@ async function executeOperation(
 		const bank = await getBankCredential(ctx, i);
 		const client = await createScipioClient(ctx, { itemIndex: i, secrets: bank.secrets });
 		const options = ctx.getNodeParameter('options', i, {}) as IDataObject;
-		const { result } = await runScrapeJob(client, bank.payload, buildScrapeOptions(resolveStartDate(ctx, i), options), {
+		const scrapeOptions = buildScrapeOptions(resolveStartDate(ctx, i), options);
+		const timing = {
 			maxWaitSeconds: (options.maxWaitSeconds as number) ?? 300,
 			pollIntervalSeconds: (options.pollIntervalSeconds as number) ?? 5,
-		});
+		};
+		const result =
+			ctx.getNodeParameter('scrapeMethod', i, 'job') === 'sync'
+				? await runSyncScrape(client, bank.payload, scrapeOptions, timing)
+				: (await runScrapeJob(client, bank.payload, scrapeOptions, timing)).result;
 		return mapResult(
 			result,
 			bank.payload.companyId,

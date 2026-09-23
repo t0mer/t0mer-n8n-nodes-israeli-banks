@@ -72,7 +72,8 @@ const SCRAPER_OPTIONS: INodeProperties[] = [
 		type: 'number',
 		typeOptions: { minValue: 10 },
 		default: 300,
-		description: 'How long to wait for the scrape before giving up and cancelling the job',
+		description:
+			'How long to wait for the scrape before giving up (and cancelling the job). With Synchronous Request this is the HTTP timeout.',
 	},
 	{
 		displayName: 'Opt-In Feature Names or IDs',
@@ -89,7 +90,7 @@ const SCRAPER_OPTIONS: INodeProperties[] = [
 		type: 'number',
 		typeOptions: { minValue: 2 },
 		default: 5,
-		description: 'How often to check the job status while waiting',
+		description: 'How often to check the job status while waiting. Not used with Synchronous Request.',
 	},
 ];
 

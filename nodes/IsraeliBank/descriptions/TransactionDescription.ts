@@ -25,6 +25,26 @@ export const transactionOperations: INodeProperties[] = [
 ];
 
 export const transactionFields: INodeProperties[] = [
+	{
+		displayName: 'Scrape Method',
+		name: 'scrapeMethod',
+		type: 'options',
+		displayOptions: showForGetMany,
+		options: [
+			{
+				name: 'Async Job (Recommended)',
+				value: 'job',
+				description: 'Create a Scipio job and poll it until it finishes. Safe for long scrapes and behind proxies.',
+			},
+			{
+				name: 'Synchronous Request',
+				value: 'sync',
+				description:
+					'One request that waits for the whole scrape (30s–3min). Can be cut off by reverse proxies; not for OTP prompts.',
+			},
+		],
+		default: 'job',
+	},
 	...startDateFields(showForGetMany),
 	{
 		displayName: 'Output Mode',
