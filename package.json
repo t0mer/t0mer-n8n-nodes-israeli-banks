@@ -1,17 +1,21 @@
 {
 	"name": "@t0mer/n8n-nodes-israeli-banks",
 	"version": "0.1.0",
-	"description": "n8n nodes for Israeli bank and credit-card transactions via a self-hosted Scipio server",
+	"description": "n8n nodes that fetch Israeli bank and credit-card transactions from a self-hosted Scipio server, with async scrape jobs, OTP two-factor support and a trigger for new transactions.",
 	"license": "MIT",
 	"homepage": "https://github.com/t0mer/n8n-nodes-israeli-banks#readme",
 	"keywords": [
 		"n8n-community-node-package",
 		"n8n",
 		"israel",
+		"israeli-banks",
 		"bank",
+		"credit-card",
+		"transactions",
 		"israeli-bank-scrapers",
 		"scipio",
-		"finance"
+		"finance",
+		"personal-finance"
 	],
 	"author": {
 		"name": "Tomer Klein",
